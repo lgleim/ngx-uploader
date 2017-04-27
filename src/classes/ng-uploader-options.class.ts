@@ -1,5 +1,5 @@
 export interface INgUploaderOptions {
-  url: string;
+  url: string | (() => Promise<string>);
   cors?: boolean;
   withCredentials?: boolean;
   multiple?: boolean;
@@ -21,11 +21,10 @@ export interface INgUploaderOptions {
   allowedExtensions?: string[];
   maxSize?: number;
   plainJson?: boolean;
-  
 }
 
 export class NgUploaderOptions implements INgUploaderOptions {
-  url: string;
+  url: string | (() => Promise<string>);
   cors?: boolean;
   withCredentials?: boolean;
   multiple?: boolean;

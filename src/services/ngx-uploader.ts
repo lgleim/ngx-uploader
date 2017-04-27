@@ -31,11 +31,10 @@ export class NgUploaderService {
   uploadFile(file: File): void {
     let xhr = new XMLHttpRequest();
     let payload: FormData | File | {};
-    
+
     if (this.opts.plainJson) {
       payload = JSON.stringify(this.opts.data)
-    }
-    else if (this.opts.multipart) {
+    } else if (this.opts.multipart) {
       let form = new FormData();
       Object.keys(this.opts.data).forEach(k => {
         form.append(k, this.opts.data[k]);
@@ -59,7 +58,7 @@ export class NgUploaderService {
     let time: number = new Date().getTime();
     let load = 0;
     let speed = 0;
-    let speedHumanized: string|null = null;
+    let speedHumanized: string | null = null;
 
     xhr.upload.onprogress = (e: ProgressEvent) => {
       if (e.lengthComputable) {
@@ -106,39 +105,44 @@ export class NgUploaderService {
     xhr.onreadystatechange = () => {
       if (xhr.readyState === XMLHttpRequest.DONE) {
         uploadingFile.onFinished(
-            xhr.status,
-            xhr.statusText,
-            xhr.response
+          xhr.status,
+          xhr.statusText,
+          xhr.response
         );
         this.removeFileFromQueue(queueIndex);
         this._emitter.emit(uploadingFile);
       }
     };
 
-    xhr.open(<string>this.opts.method, this.opts.url, true);
-    xhr.withCredentials = <boolean>this.opts.withCredentials;
+    (typeof this.opts.url === 'string'
+      ? Promise.resolve(this.opts.url)
+      : this.opts.url()
+    ).then(url => {
+      xhr.open(<string>this.opts.method, url, true);
+      xhr.withCredentials = <boolean>this.opts.withCredentials;
 
-    if (this.opts.filenameHeader) {
-      xhr.setRequestHeader(this.opts.filenameHeader, file.name);
-    }
+      if (this.opts.filenameHeader) {
+        xhr.setRequestHeader(this.opts.filenameHeader, file.name);
+      }
 
-    if (this.opts.customHeaders) {
-      Object.keys(this.opts.customHeaders).forEach((key) => {
-        xhr.setRequestHeader(key, this.opts.customHeaders[key]);
-      });
-    }
+      if (this.opts.customHeaders) {
+        Object.keys(this.opts.customHeaders).forEach((key) => {
+          xhr.setRequestHeader(key, this.opts.customHeaders[key]);
+        });
+      }
 
-    if (this.opts.authToken) {
-      xhr.setRequestHeader('Authorization', `${this.opts.authTokenPrefix} ${this.opts.authToken}`);
-    }
+      if (this.opts.authToken) {
+        xhr.setRequestHeader('Authorization', `${this.opts.authTokenPrefix} ${this.opts.authToken}`);
+      }
 
-    this._beforeEmitter.emit(uploadingFile);
+      this._beforeEmitter.emit(uploadingFile);
 
-    if (!uploadingFile.abort) {
-      xhr.send(payload);
-    } else {
-      this.removeFileFromQueue(queueIndex);
-    }
+      if (!uploadingFile.abort) {
+        xhr.send(payload);
+      } else {
+        this.removeFileFromQueue(queueIndex);
+      }
+    });
   }
 
   addFilesToQueue(files: File[]): void {
@@ -161,7 +165,7 @@ export class NgUploaderService {
   createFileUrl(file: File) {
     let reader: FileReader = new FileReader();
     reader.addEventListener('load', () => {
-        this._previewEmitter.emit(reader.result);
+      this._previewEmitter.emit(reader.result);
     });
     reader.readAsDataURL(file);
   }
